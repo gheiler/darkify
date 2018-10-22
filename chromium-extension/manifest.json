@@ -1,0 +1,19 @@
+{
+    "name": "Make the web black",
+    "version": "0.1",
+    "description": "Plugins for different browsers to make the web black. Base colors are taken from popular Drakula theme.",
+    "permissions": ["storage"],
+    "background": {
+        "scripts": ["js/background.js"],
+        "persistent": false
+    },
+    "content_scripts": [{
+        "css": [ "css/basics.css" ],
+        "matches": [ "<all_urls>" ]
+    }],
+    "web_accessible_resources": [
+        "css/basics.css",
+        "css/extras.css"
+    ],
+    "manifest_version": 2
+  }
