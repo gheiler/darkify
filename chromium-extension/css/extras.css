@@ -1,3 +1,14 @@
-body, input, textarea {
-    color: #F8F8F2;
+html, body, input, textarea, p, h1, h2, h3, h4, h5, h6 {
+    color: #F8F8F2!important;
+}
+em, strong, b {
+    color: #8BE9FD!important;
+}
+.asd{
+color:#282A36, #F8F8F2, #44475A, #6272A4, #8BE9FD, #50FA7B, #FFB86C,
+    #FF79C6, #BD93F9, #FF5555, #F1FA8C, #21222C, #FF5555, #50FA7B,
+    #F1FA8C, #BD93F9, #FF79C6, #8BE9FD, #F8F8F2, #6272A4, #FF6E6E,
+    #69FF94, #FFFFA5, #D6ACFF, #FF92DF, #A4FFFF, #FFFFFF, #E9F284,
+    #8BE9FE, #44475A75, #424450, #FFFFFF, #44475A70, #424450,
+    #343746, #21222C, #191A21
 }

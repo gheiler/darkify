@@ -1,3 +1,38 @@
-body, input, textarea {
-    background: #282A36;
+body, html {
+    background-color: #282A36!important;
+}
+* {
+    background-color: #282A36!important;
+    color: #F8F8F2!important;
+}
+path:not([fill="none"]), polygon:not([fill="none"]),
+polyline:not([fill="none"]), pattern:not([fill="none"]) {
+    fill: #fff!important;
+}
+video {
+    background-color: inherit!important;
+}
+pre, pre > *, pre > * >*, code, code > *, code > * > * {
+    background-color: #44475A!important;
+}
+a, a > * {
+    color: #92a4c1!important;
+}
+a:visited, a:visited > * {
+    color: #5178b5!important;
+}
+a:hover, a:hover > * {
+    background-color: #44475A!important;
+}
+em, strong, b {
+    color: #FFFFA5!important;
+}
+*[role="button"], *[role="button"]:hover {
+    border: 1px solid #fff;
+}
+input[type="text"] {
+    border-bottom: 1px solid #fff;
+}
+input::placeholder {
+    color: #ffffff70;
 }
