@@ -1,31 +1,31 @@
-body, html {
-    background-color: #282A36!important;
+/* body, html {
+    background-color: #282A36;
 }
 * {
-    background-color: #282A36!important;
-    color: #F8F8F2!important;
+    background-color: #282A36;
+    color: #F8F8F2;
 }
 path:not([fill="none"]), polygon:not([fill="none"]),
 polyline:not([fill="none"]), pattern:not([fill="none"]) {
-    fill: #fff!important;
+    fill: #fff;
 }
 video {
-    background-color: inherit!important;
+    background-color: inherit;
 }
 pre, pre > *, pre > * >*, code, code > *, code > * > * {
-    background-color: #44475A!important;
+    background-color: #44475A;
 }
 a, a > * {
-    color: #92a4c1!important;
+    color: #92a4c1;
 }
 a:visited, a:visited > * {
-    color: #5178b5!important;
+    color: #5178b5;
 }
 a:hover, a:hover > * {
-    background-color: #44475A!important;
+    background-color: #44475A;
 }
 em, strong, b {
-    color: #FFFFA5!important;
+    color: #FFFFA5;
 }
 *[role="button"], *[role="button"]:hover {
     border: 1px solid #fff;
@@ -35,4 +35,4 @@ input[type="text"] {
 }
 input::placeholder {
     color: #ffffff70;
-}
+} */
