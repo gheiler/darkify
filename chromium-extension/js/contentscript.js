@@ -1,4 +1,13 @@
+// ToDo tasks:
+// . add option to switch dark mode on page/domain
+// . improve performance
+// . add dark loader option
+// . add option to start without dark
+// . add option to make dark just at night
+
 let styleSheetsLength = document.styleSheets.length;
+
+// ToDo wait for window load, go through all items, take computed styles and add as style tag
 for (let i = 0; i < styleSheetsLength; i++) {
 
     let styleSheet = document.styleSheets[i];
@@ -24,8 +33,8 @@ for (let i = 0; i < styleSheetsLength; i++) {
 function getNewRuleFromRuleStyle(rule) {
     // ToDo check for bacground-image with grandient and stuff
     //      check for border color
+    //      check for background, border, border-shadow, parse and replace
     let newRule = '';
-    // ToDo take into consideration screen, print, ? rules. Then iterate on all the rules inside those
     if (rule.style) {
         if (rule.style.color !== '') {
             let newColor = getNewColor(rule.style.color);
@@ -51,12 +60,9 @@ function getNewRuleFromRuleStyle(rule) {
             newRule = rule.selectorText + ' { ' + newRule + ' } ';
         }
     } else if (rule.cssRules) {
-        // ToDo parse cssText instead
         let selector = rule.cssText.match(/.+?(?={)/)[0];
-        // ToDo rework iteration to handle media cases where there is a list of rules inside a rule
         for (let k = 0; k < rule.cssRules.length; k++) {
             let subRule = rule.cssRules[k];
-            // ToDo make this one a real recursive function
             let newSubRule = getNewRuleFromRuleStyle(subRule);
             if (newSubRule) {
                 newRule += newSubRule;
