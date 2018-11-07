@@ -7,30 +7,88 @@
 
 let styleSheetsLength = document.styleSheets.length;
 
-// ToDo wait for window load, go through all items, take computed styles and add as style tag
-for (let i = 0; i < styleSheetsLength; i++) {
+window.onload = function() {
+    // first we reverse all the style sheets
+try {
+        for (let i = 0; i < styleSheetsLength; i++) {
 
-    let styleSheet = document.styleSheets[i];
-    let styleEl = document.createElement('style');
-    document.head.appendChild(styleEl);
-    let styleSheetOverride = styleEl.sheet;
-    
-    console.log(styleSheet);
-    for (let j = 0; j < styleSheet.rules.length; j++) {
+            let styleSheet = document.styleSheets[i];
+            let styleEl = document.createElement('style');
+            document.head.appendChild(styleEl);
+            styleEl.id = 'mtwd-' + i;
+            let styleSheetOverride = styleEl.sheet;
+            
+            console.log(styleSheet);
+            for (let j = 0; j < styleSheet.rules.length; j++) {
 
-        if (j === 90) {
-            let foo = '';
+                if (j === 90) {
+                    let foo = '';
+                }
+                let rule = styleSheet.rules[j];
+                let newRule = getNewRuleFromRuleStyle(rule);
+
+                if (newRule !== '') {
+                    styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
+                }
+            }
         }
-        let rule = styleSheet.rules[j];
-        let newRule = getNewRuleFromRuleStyle(rule);
+    } catch(e) {
+        // some websites just dont allow access to their style sheets
+    }
 
-        if (newRule !== '') {
-            styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
+    // then we reverse all the computed styles
+    document.querySelectorAll('*').forEach(function(node) {
+        reverseStylesForNode(node);
+    });
+
+    // We also check for changes on the dom
+    var config = { childList: true, subtree: true };
+
+    // Callback function to execute when mutations are observed
+    var callback = function(mutationsList, observer) {
+        setTimeout(function () {
+            for(var mutation of mutationsList) {
+                if (mutation.type == 'childList') {
+                    console.log('A child node has been added or removed.');
+                    if (mutation.target) {
+                        reverseStylesForNode(mutation.target);
+                    }
+                }
+                else if (mutation.type == 'attributes') {
+                    console.log('The ' + mutation.attributeName + ' attribute was modified.');
+                }
+                
+            }
+        }, 100);
+    };
+
+    // Create an observer instance linked to the callback function
+    var observer = new MutationObserver(callback);
+
+    // Start observing the target node for configured mutations
+    observer.observe(document.querySelector('body'), config);
+};
+
+
+function reverseStylesForNode(node) {
+    let rule = '';
+    try {
+        rule = window.getComputedStyle(node);
+        let newRule = getNewRuleFromRuleStyle({ style: rule }, false);
+        if (node.style.cssText) {
+            let cssValue = node.style.cssText.trim();
+            if (!cssValue.indexOf(';', cssValue.length - 1)) {
+                cssValue += ';';
+            }
+            newRule = cssValue + newRule;
         }
+        node.setAttribute('style', newRule);
+    } catch (e) {
+        let foo = '';
     }
 }
 
-function getNewRuleFromRuleStyle(rule) {
+function getNewRuleFromRuleStyle(rule, addSelector = true) {
     // ToDo check for bacground-image with grandient and stuff
     //      check for border color
     //      check for background, border, border-shadow, parse and replace
@@ -56,7 +114,7 @@ function getNewRuleFromRuleStyle(rule) {
             }
         }
 
-        if (newRule !== '') {
+        if (newRule !== '' && addSelector) {
             newRule = rule.selectorText + ' { ' + newRule + ' } ';
         }
     } else if (rule.cssRules) {
@@ -69,7 +127,7 @@ function getNewRuleFromRuleStyle(rule) {
             }
         }
 
-        if (newRule != '') {
+        if (newRule != '' && addSelector) {
             newRule = selector + '{' + newRule + '}';
         }
     }
