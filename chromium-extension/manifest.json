@@ -1,7 +1,7 @@
 {
-    "name": "Make the web black",
+    "name": "Make the web dark",
     "version": "0.1",
-    "description": "Plugins for different browsers to make the web black. Base colors are taken from popular Drakula theme.",
+    "description": "Take all websites to the dark side.",
     "author": "Gabriel Heiler",
     "homepage_url": "https://www.gabrielheiler.com",
     "permissions": ["http://*/*","https://*/*", "tabs", "activeTab", "declarativeContent"],
