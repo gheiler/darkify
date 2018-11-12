@@ -36,8 +36,14 @@ window.onload = function() {
         console.log(e);
     }
 
+    // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
+    document.querySelectorAll('body').forEach(function(node) {
+        reverseStylesForNode(node);
+        node.setAttribute('style', newRule);
+    });
+
     // then we reverse all the computed styles
-    document.querySelectorAll('*').forEach(function(node) {
+    document.querySelectorAll('[style]').forEach(function(node) {
         reverseStylesForNode(node);
     });
 
@@ -48,16 +54,15 @@ window.onload = function() {
     var callback = function(mutationsList, observer) {
         setTimeout(function () {
             for(var mutation of mutationsList) {
-                if (mutation.type == 'childList') {
+                if (mutation.type == 'childList' || mutation.type == 'attributes') {
                     console.log('A child node has been added or removed.');
                     if (mutation.target) {
                         reverseStylesForNode(mutation.target);
                     }
                 }
-                else if (mutation.type == 'attributes') {
+                /*else if (mutation.type == 'attributes') {
                     console.log('The ' + mutation.attributeName + ' attribute was modified.');
-                }
-                
+                }*/
             }
         }, 100);
     };
