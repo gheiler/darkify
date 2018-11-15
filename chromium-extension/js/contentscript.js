@@ -5,6 +5,8 @@
 // . add option to start without dark
 // . add option to make dark just at night
 
+const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
+
 window.onload = function() {
     let styleSheetsLength = document.styleSheets.length;
     // first we reverse all the style sheets
@@ -39,11 +41,10 @@ window.onload = function() {
     // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
     document.querySelectorAll('body').forEach(function(node) {
         reverseStylesForNode(node);
-        node.setAttribute('style', newRule);
     });
 
     // then we reverse all the computed styles
-    document.querySelectorAll('[style]').forEach(function(node) {
+    document.querySelectorAll('*').forEach(function(node) {
         reverseStylesForNode(node);
     });
 
@@ -99,41 +100,41 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
     //      check for background, border, border-shadow, parse and replace
     let newRule = '';
     if (rule.style) {
-        if (rule.style.color !== '') {
+        if (rule.style.color !== '' && rule.style.color !== defaultEmptyColor) {
             let newColor = getNewColor(rule.style.color);
             if (newColor) {
                 newRule = appendToRule(newRule, 'color: ' + newColor);
             }
         }
         // ToDo check which rule comes first and respect order
-        if (rule.style.backgroundColor !== '') {
+        if (rule.style.backgroundColor !== '' && rule.style.backgroundColor !== defaultEmptyColor) {
             let newBackgroundColor = getNewBackgroundColor(rule.style.backgroundColor);
             if (newBackgroundColor) {
                 newRule = appendToRule(newRule, 'background-color: ' + newBackgroundColor);
             }
         }
-        if (rule.style.backgroundImage !== '') {
+        if (rule.style.backgroundImage !== '' && rule.style.backgroundImage !== defaultEmptyColor) {
             let newBackgrounRule = getNewRuleFromGradient(rule.style.backgroundImage);
             if (newBackgrounRule != '') {
                 newRule = appendToRule(newRule, 'background-image: ' + newBackgrounRule);
             }
         }
-        if (rule.style.background !== '') {
+        if (rule.style.background !== '' && rule.style.background !== defaultEmptyColor) {
             let newBackground = getNewBackgroundColor(rule.style.background);
             if (newBackground) {
                 // too much stuff to fix if we want to go this way
-                // let colorToReplace = getRGB(rule.style.background); 
+                // let colorToReplace = getRGBA(rule.style.background); 
                 //newRule = appendToRule(newRule, 'background: ' + rule.style.border.replace(colorToReplace.value, newBackground));
                 newRule = appendToRule(newRule, 'background: ' + newBackground);
             }
         }
-        if (rule.style.borderColor !== '') {
+        if (rule.style.borderColor !== '' && rule.style.borderColor !== defaultEmptyColor) {
             let newBackgroundColor = getNewColor(rule.style.borderColor);
             if (newBackgroundColor) {
                 newRule = appendToRule(newRule, 'border-color: ' + newBackgroundColor);
             }
         }
-        if (rule.style.borderImage !== '') {
+        if (rule.style.borderImage !== '' && rule.style.borderImage !== defaultEmptyColor) {
             let newBackgrounRule = getNewRuleFromGradient(rule.style.borderImage, true);
             if (newBackgrounRule != '') {
                 newRule = appendToRule(newRule, 'border-image: ' + newBackgrounRule);
@@ -148,10 +149,10 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
                 newRule = appendToRule(newRule, 'box-shadow: ' + match);
             }
         }*/
-        if (rule.style.border !== '') {
+        if (rule.style.border !== '' && rule.style.border !== defaultEmptyColor) {
             let newBackgrounRule = getNewColor(rule.style.border);
             if (newBackgrounRule != '') {
-                let colorToReplace = getRGB(rule.style.border);
+                let colorToReplace = getRGBA(rule.style.border);
                 newRule = appendToRule(newRule, 'border: ' + rule.style.border.replace(colorToReplace.value, newBackgrounRule));
             }
         }
@@ -181,7 +182,7 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
 }
 
 function getNewColor(unformattedColor) {
-    let color = getRGB(unformattedColor);
+    let color = getRGBA(unformattedColor);
 
     if (!color || colorLuminanceIsLightEnough(color))
         return null;
@@ -189,7 +190,7 @@ function getNewColor(unformattedColor) {
     const brightnessPercentage = colorLuminanceIsBlack(color) ? 70 : 55;
     const newColor = brightenColor(color, brightnessPercentage);
 
-    return getRgbStringFromColor(newColor);
+    return getRgbaStringFromColor(newColor);
 }
 
 function getNewRuleFromGradient(gradientImage, lightColor) {
@@ -227,7 +228,7 @@ function getNewRuleFromGradient(gradientImage, lightColor) {
 }
 
 function getNewBackgroundColor(unformattedColor, alt) {
-    let color = getRGB(unformattedColor);
+    let color = getRGBA(unformattedColor);
 
     if (!color || colorLuminanceIsDarkEnough(color))
         return null;
@@ -240,14 +241,23 @@ function getNewBackgroundColor(unformattedColor, alt) {
     return shadeBlendConvert(-0.7, color);
 }
 
-function getRGB(unformattedColor){
+function getRGBA(unformattedColor){
     if (typeof unformattedColor !== 'string') return null;
     let a;
     let hexaFromName = colourNameToHex(unformattedColor);
     if (hexaFromName) {
         unformattedColor = hexaFromName;
     }
-    // ToDo improve by adding opacity
+    // RGBA
+    if (a=/rgba\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor)) 
+        return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), a: parseInt(a[4]), value: a[0] };
+    if (a=/rgba\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor)) 
+        return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, a: parseFloat(a[4]), value: a[0] };
+    if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor)) 
+        return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
+    if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor)) 
+        return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
+    // just RGB
     if (a=/rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor)) 
         return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), value: a[0] };
     if (a=/rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor)) 
@@ -260,7 +270,10 @@ function getRGB(unformattedColor){
     return null;
 };
 
-function getRgbStringFromColor(color){
+function getRgbaStringFromColor(color){
+    if (color.a) {
+        return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
+    }
     return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
 };
 
@@ -292,12 +305,15 @@ function brightenColor(color, percentage) {
     brightenedColor.r = Math.max(0, Math.min(255, color.r - Math.round(255 * - (percentage / 100))));
     brightenedColor.g = Math.max(0, Math.min(255, color.g - Math.round(255 * - (percentage / 100))));
     brightenedColor.b = Math.max(0, Math.min(255, color.b - Math.round(255 * - (percentage / 100))));
+    if (color.a) {
+        brightenedColor.a = color.a;
+    }
 
     return brightenedColor;
 }
 
 const shadeBlendConvert = function (p, color, to) {
-    from = getRgbStringFromColor(color);
+    from = getRgbaStringFromColor(color);
     if(typeof(p)!="number"||p<-1||p>1||typeof(from)!="string"||(from[0]!='r'&&from[0]!='#')||(to&&typeof(to)!="string"))return null; //ErrorCheck
     if(!this.sbcRip)this.sbcRip=(d)=>{
         let l=d.length,RGB={};
