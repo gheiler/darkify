@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        background-color: #282A36;
+        min-width: 180px;
+      }
+      button {
+        padding: 5px 30px;
+        outline: none;
+        background-color: #799cb7;
+        border: 1px solid #F8F8F2;
+        color: #F8F8F2;
+        margin: 0 auto;
+        margin-bottom: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <button id="excludeCurrentDomain">Exclude current page</button>
+      <button id="includeCurrentDomain" style="display: none;">Include current page</button>
+      <button id="stop">Stop (all tabs)</button>
+      <button id="start" style="display: none;">Start</button>
+    </div>
+    <script src="js/popup.js"></script>
+  </body>
+</html>

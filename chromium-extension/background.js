@@ -1,10 +1,19 @@
 
-// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-//     chrome.tabs.insertCSS(tabId, { file: "css/extras.css" }, function() {
-//         console.log("extras was inserted successfully");
-//     });
-//     for (let i = 0; i < document.styleSheets.length; i++) {
-//         var sheet = document.styleSheets[i];
-//         console.log(sheet);
-//     }
-// });
+chrome.runtime.onInstalled.addListener(function() {
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+      chrome.declarativeContent.onPageChanged.addRules([{
+        conditions: [
+            new chrome.declarativeContent.PageStateMatcher({
+                pageUrl: { hostEquals: 'developer.chrome.com' },
+            })
+        ],
+        actions: [new chrome.declarativeContent.ShowPageAction()]
+      }]);
+    });
+});
+
+chrome.webNavigation.onCommitted.addListener(function() {
+    chrome.storage.sync.get('timedStart', function(data) { 
+        
+    });
+});

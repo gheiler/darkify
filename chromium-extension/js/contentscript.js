@@ -1,79 +1,100 @@
 // ToDo tasks:
 // . add option to switch dark mode on page/domain
 // . improve performance
-// . add dark loader option
-// . add option to start without dark
 // . add option to make dark just at night
-
+const dontStop = 'dontStop';
 const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
+const defaultBackground = 'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box';
+const defaultBackgroundImage = 'none';
 
-window.onload = function() {
-    let styleSheetsLength = document.styleSheets.length;
-    // first we reverse all the style sheets
-    try {
-        for (let i = 0; i < styleSheetsLength; i++) {
+chrome.storage.sync.get(['dontStop', 'excludedDomains'], function(data) {
+    if (data.dontStop && (!data.excludedDomains || !data.excludedDomains.includes(window.location.origin))) {
 
-            let styleSheet = document.styleSheets[i];
-            let styleEl = document.createElement('style');
-            document.head.appendChild(styleEl);
-            styleEl.id = 'mtwd-' + i;
-            let styleSheetOverride = styleEl.sheet;
-            
-            console.log(styleSheet);
-            for (let j = 0; j < styleSheet.rules.length; j++) {
+        var loaderStyle = document.documentElement.appendChild(document.createElement('style'));
+        loaderStyle.textContent = 'head {display:block!important;top:0!important;left:0!important;position:fixed!important;width:100%!important;height:100%!important;opacity:0.95!important;z-index:2147483647!important;background:#282A36!important}';
 
-                if (j === 90) {
-                    let foo = '';
-                }
-                let rule = styleSheet.rules[j];
-                let newRule = getNewRuleFromRuleStyle(rule);
+        window.onload = function() {
+            let styleSheetsLength = document.styleSheets.length;
+            // first we reverse all the style sheets
+            try {
+                for (let i = 0; i < styleSheetsLength; i++) {
 
-                if (newRule !== '') {
-                    styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
-                }
-            }
-        }
-    } catch(e) {
-        // some websites just dont allow access to their style sheets
-        console.log(e);
-    }
+                    let styleSheet = document.styleSheets[i];
+                    let styleEl = document.createElement('style');
+                    document.head.appendChild(styleEl);
+                    styleEl.id = 'mtwd-' + i;
+                    let styleSheetOverride = styleEl.sheet;
+                    
+                    console.log(styleSheet);
+                    for (let j = 0; j < styleSheet.rules.length; j++) {
 
-    // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
-    document.querySelectorAll('body').forEach(function(node) {
-        reverseStylesForNode(node);
-    });
+                        if (j === 90) {
+                            let foo = '';
+                        }
+                        let rule = styleSheet.rules[j];
+                        let newRule = getNewRuleFromRuleStyle(rule);
 
-    // then we reverse all the computed styles
-    document.querySelectorAll('*').forEach(function(node) {
-        reverseStylesForNode(node);
-    });
-
-    // We also check for changes on the dom
-    var config = { childList: true, subtree: true };
-
-    // Callback function to execute when mutations are observed
-    var callback = function(mutationsList, observer) {
-        setTimeout(function () {
-            for(var mutation of mutationsList) {
-                if (mutation.type == 'childList' || mutation.type == 'attributes') {
-                    console.log('A child node has been added or removed.');
-                    if (mutation.target) {
-                        reverseStylesForNode(mutation.target);
+                        if (newRule !== '') {
+                            styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
+                        }
                     }
                 }
-                /*else if (mutation.type == 'attributes') {
-                    console.log('The ' + mutation.attributeName + ' attribute was modified.');
-                }*/
+            } catch(e) {
+                // some websites just dont allow access to their style sheets
+                console.log(e);
             }
-        }, 100);
-    };
 
-    // Create an observer instance linked to the callback function
-    var observer = new MutationObserver(callback);
+            // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
+            document.querySelectorAll('body').forEach(function(node) {
+                rule = window.getComputedStyle(node);
+                if ((!rule.backgroundColor || rule.backgroundColor === '' || rule.backgroundColor === defaultEmptyColor || rule.backgroundColor === 'transparent') && 
+                    (!rule.backgroundImage || rule.backgroundImage === '' || rule.backgroundImage === defaultBackgroundImage) && 
+                    (!rule.background || rule.background === '' || rule.background === defaultBackground || rule.background === 'transparent')
+                ) {
+                    node.setAttribute('style', 'background-color: #282A36');
+                }
+            });
 
-    // Start observing the target node for configured mutations
-    observer.observe(document.querySelector('body'), config);
-};
+            // then we reverse all the computed styles
+            document.querySelectorAll('*').forEach(function(node, index, array) {
+                try {
+                    reverseStylesForNode(node);
+                }
+                catch(ex) {}
+
+                if (index === array.length - 1) {
+                    loaderStyle.remove();
+                }
+            });
+
+            // We also check for changes on the dom
+            var config = { childList: true, subtree: true };
+
+            // Callback function to execute when mutations are observed
+            var callback = function(mutationsList, observer) {
+                setTimeout(function () {
+                    for(var mutation of mutationsList) {
+                        if (mutation.type == 'childList' || mutation.type == 'attributes') {
+                            console.log('A child node has been added or removed.');
+                            if (mutation.target) {
+                                reverseStylesForNode(mutation.target);
+                            }
+                        }
+                        /*else if (mutation.type == 'attributes') {
+                            console.log('The ' + mutation.attributeName + ' attribute was modified.');
+                        }*/
+                    }
+                }, 100);
+            };
+
+            // Create an observer instance linked to the callback function
+            var observer = new MutationObserver(callback);
+
+            // Start observing the target node for configured mutations
+            observer.observe(document.querySelector('body'), config);
+        };
+    }
+});
 
 
 function reverseStylesForNode(node) {
@@ -115,7 +136,7 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
         }
         if (rule.style.backgroundImage !== '' && rule.style.backgroundImage !== defaultEmptyColor) {
             let newBackgrounRule = getNewRuleFromGradient(rule.style.backgroundImage);
-            if (newBackgrounRule != '') {
+            if (newBackgrounRule && newBackgrounRule != '') {
                 newRule = appendToRule(newRule, 'background-image: ' + newBackgrounRule);
             }
         }
@@ -151,7 +172,7 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
         }*/
         if (rule.style.border !== '' && rule.style.border !== defaultEmptyColor) {
             let newBackgrounRule = getNewColor(rule.style.border);
-            if (newBackgrounRule != '') {
+            if (newBackgrounRule && newBackgrounRule != '') {
                 let colorToReplace = getRGBA(rule.style.border);
                 newRule = appendToRule(newRule, 'border: ' + rule.style.border.replace(colorToReplace.value, newBackgrounRule));
             }
@@ -175,9 +196,6 @@ function getNewRuleFromRuleStyle(rule, addSelector = true) {
         }
     }
 
-    if (newRule != '') {
-        console.log(newRule);
-    }
     return newRule;
 }
 
@@ -248,10 +266,9 @@ function getRGBA(unformattedColor){
     if (hexaFromName) {
         unformattedColor = hexaFromName;
     }
+    // ToDo add support to hsl() and var() man o meter this is endless...
     // RGBA
-    if (a=/rgba\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor)) 
-        return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), a: parseInt(a[4]), value: a[0] };
-    if (a=/rgba\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor)) 
+    if (a=/rgba\(\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(unformattedColor)) 
         return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, a: parseFloat(a[4]), value: a[0] };
     if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor)) 
         return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
@@ -259,13 +276,13 @@ function getRGBA(unformattedColor){
         return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
     // just RGB
     if (a=/rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor)) 
-        return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), value: a[0] };
+        return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), a: null, value: a[0] };
     if (a=/rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor)) 
-        return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, value: a[0] };
+        return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, a: null, value: a[0] };
     if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor)) 
-        return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), value: a[0] };
+        return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), a: null, value: a[0] };
     if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor)) 
-        return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), value: a[0] };
+        return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), a: null, value: a[0] };
 
     return null;
 };
@@ -305,7 +322,7 @@ function brightenColor(color, percentage) {
     brightenedColor.r = Math.max(0, Math.min(255, color.r - Math.round(255 * - (percentage / 100))));
     brightenedColor.g = Math.max(0, Math.min(255, color.g - Math.round(255 * - (percentage / 100))));
     brightenedColor.b = Math.max(0, Math.min(255, color.b - Math.round(255 * - (percentage / 100))));
-    if (color.a) {
+    if (color.a !== null) {
         brightenedColor.a = color.a;
     }
 
@@ -720,3 +737,5 @@ GradientParser.parse = (function() {
     return getAST();
   };
 })();
+
+

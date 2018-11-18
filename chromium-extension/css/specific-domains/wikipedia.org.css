@@ -1,0 +1,4 @@
+
+.vectorTabs ul, .vectorTabs li, .vectorTabs li.selected {
+    background-image: none;
+}
