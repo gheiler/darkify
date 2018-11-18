@@ -4,24 +4,26 @@
     <style>
       body {
         background-color: #282A36;
-        min-width: 180px;
+        min-width: 300px;
       }
       button {
+        display: block;
         padding: 5px 30px;
         outline: none;
-        background-color: #799cb7;
+        background-color: #ff5a56;
         border: 1px solid #F8F8F2;
         color: #F8F8F2;
-        margin: 0 auto;
-        margin-bottom: 5px;
+        margin: 0 auto 5px;
         cursor: pointer;
+        text-align: center;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <button id="excludeCurrentDomain">Exclude current page</button>
-      <button id="includeCurrentDomain" style="display: none;">Include current page</button>
+      <button id="excludeOnce">Stop once (refresh page to redarkify)</button>
+      <button id="excludeCurrentDomain">Stop on current page</button>
+      <button id="includeCurrentDomain" style="display: none;">Restart on current page</button>
       <button id="stop">Stop (all tabs)</button>
       <button id="start" style="display: none;">Start</button>
     </div>

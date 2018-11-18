@@ -4,12 +4,12 @@
     <style>
         body {
             background-color: #282A36;
-            min-width: 180px;
+            min-width: 300px;
         }
         input, button {
             padding: 5px 30px;
             outline: none;
-            background-color: #799cb7;
+            background-color: #ff5a56;
             border: 1px solid #F8F8F2;
             color: #F8F8F2;
             margin: 0 auto;
@@ -19,8 +19,17 @@
     </style>
   </head>
   <body>
-      Timed start
-      <input type="checkbox" >
+      <label>Timed start</label>
+      <input type="checkbox" id="timedStart" >
+
+      <!-- ToDo: Code this
+          <label>From sunset to sunrise</label>
+      <input type="checkbox" id="udjustWithSunset" > -->
+      <label>From</label>
+      <input type="time" id="timeFrom" value="18:00" >
+      <label>To</label>
+      <input type="time" id="timeTo" value="08:00" >
+
       <script src="js/options.js"></script>
   </body>
 </html>

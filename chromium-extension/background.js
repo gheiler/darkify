@@ -11,9 +11,3 @@ chrome.runtime.onInstalled.addListener(function() {
       }]);
     });
 });
-
-chrome.webNavigation.onCommitted.addListener(function() {
-    chrome.storage.sync.get('timedStart', function(data) { 
-        
-    });
-});

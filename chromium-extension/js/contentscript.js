@@ -7,9 +7,36 @@ const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
 const defaultBackground = 'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box';
 const defaultBackgroundImage = 'none';
 
-chrome.storage.sync.get(['dontStop', 'excludedDomains'], function(data) {
-    if (data.dontStop && (!data.excludedDomains || !data.excludedDomains.includes(window.location.origin))) {
+chrome.storage.sync.get(['dontStop', 'excludedDomains', 'excludeOnce', 'timedStart','timeFrom','timeTo'], function(data) {
+    
+    chrome.storage.sync.set({ excludeOnce: false});
 
+    let dateFromHour = parseInt(data.timeFrom.split(':')[0], 10);
+    let dateFromMins = parseInt(data.timeFrom.split(':')[1], 10);
+    let dateToHour = parseInt(data.timeTo.split(':')[0], 10);
+    if (dateToHour === 0) {
+        dateToHour = 24;
+    }
+    let dateToMins = parseInt(data.timeTo.split(':')[1], 10);
+    let now = new Date();
+    let nowFromTo = new Date();
+    let nowHours = now.getHours();
+
+    if (!data.excludeOnce && 
+        data.dontStop && 
+        (!data.excludedDomains || !data.excludedDomains.includes(window.location.origin)) &&
+        (!data.timedStart || ( // ToDo fix when dateToHour >= dateFromHour
+                (dateToHour >= dateFromHour ? 
+                    now >= nowFromTo.setHours(dateFromHour, dateFromMins) : 
+                    nowHours <= dateToHour || now >= nowFromTo.setHours(dateFromHour, dateFromMins)
+                ) &&
+                (dateToHour >= dateFromHour ? 
+                    now <= nowFromTo.setHours(dateToHour, dateToMins) : 
+                    nowHours >= dateFromHour || now <= nowFromTo.setHours(dateToHour, dateToMins)
+                )
+            )
+        )) {
+        
         var loaderStyle = document.documentElement.appendChild(document.createElement('style'));
         loaderStyle.textContent = 'head {display:block!important;top:0!important;left:0!important;position:fixed!important;width:100%!important;height:100%!important;opacity:0.95!important;z-index:2147483647!important;background:#282A36!important}';
 

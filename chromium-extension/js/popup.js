@@ -1,3 +1,4 @@
+let excludeOnce = document.getElementById('excludeOnce');
 let excludeDomain = document.getElementById('excludeCurrentDomain');
 let includeDomain = document.getElementById('includeCurrentDomain');
 let start = document.getElementById('start');
@@ -93,6 +94,13 @@ includeDomain.onclick = function() {
             checkDomainButtons();
             chrome.tabs.update(tabs[0].id, {url: tabs[0].url});
         });
+    });
+};
+
+excludeOnce.onclick = function() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.storage.sync.set( { excludeOnce: true});
+        chrome.tabs.update(tabs[0].id, {url: tabs[0].url});
     });
 };
 
