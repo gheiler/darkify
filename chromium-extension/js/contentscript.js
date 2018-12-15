@@ -1,26 +1,26 @@
 // ToDo tasks:
-// . add option to switch dark mode on page/domain
 // . improve performance
-// . add option to make dark just at night
 const dontStop = 'dontStop';
 const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
 const defaultBackground = 'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box';
 const defaultBackgroundImage = 'none';
 
 chrome.storage.sync.get(['dontStop', 'excludedDomains', 'excludeOnce', 'timedStart','timeFrom','timeTo'], function(data) {
-    
+    if (!data || typeof data.dontStop === 'undefined') data = { dontStop: true };
     chrome.storage.sync.set({ excludeOnce: false});
-
-    let dateFromHour = parseInt(data.timeFrom.split(':')[0], 10);
-    let dateFromMins = parseInt(data.timeFrom.split(':')[1], 10);
-    let dateToHour = parseInt(data.timeTo.split(':')[0], 10);
-    if (dateToHour === 0) {
-        dateToHour = 24;
+    let dateFromHour, dateFromMins, dateToHour, dateToMins, nowFromTo, nowHours, now;
+    if (data.timedStart && data.timeFrom && data.timeTo) {
+        dateFromHour = parseInt(data.timeFrom.split(':')[0], 10);
+        dateFromMins = parseInt(data.timeFrom.split(':')[1], 10);
+        dateToHour = parseInt(data.timeTo.split(':')[0], 10);
+        if (dateToHour === 0) {
+            dateToHour = 24;
+        }
+        dateToMins = parseInt(data.timeTo.split(':')[1], 10);
+        now = new Date();
+        nowFromTo = new Date();
+        nowHours = now.getHours();
     }
-    let dateToMins = parseInt(data.timeTo.split(':')[1], 10);
-    let now = new Date();
-    let nowFromTo = new Date();
-    let nowHours = now.getHours();
 
     if (!data.excludeOnce && 
         data.dontStop && 
@@ -40,7 +40,7 @@ chrome.storage.sync.get(['dontStop', 'excludedDomains', 'excludeOnce', 'timedSta
         var loaderStyle = document.documentElement.appendChild(document.createElement('style'));
         loaderStyle.textContent = 'head {display:block!important;top:0!important;left:0!important;position:fixed!important;width:100%!important;height:100%!important;opacity:0.95!important;z-index:2147483647!important;background:#282A36!important}';
 
-        window.onload = function() {
+        window.addEventListener("load", function load(event) {
             let styleSheetsLength = document.styleSheets.length;
             // first we reverse all the style sheets
             try {
@@ -119,7 +119,7 @@ chrome.storage.sync.get(['dontStop', 'excludedDomains', 'excludeOnce', 'timedSta
 
             // Start observing the target node for configured mutations
             observer.observe(document.querySelector('body'), config);
-        };
+        }, false);
     }
 });
 

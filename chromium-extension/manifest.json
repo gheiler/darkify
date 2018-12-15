@@ -1,6 +1,6 @@
 {
     "name": "darkify",
-    "version": "0.1",
+    "version": "0.2",
     "description": "darkify modifies all websites to a dark version. You can run it over a period of time, exclude pages or manually start and stop it.",
     "author": "Gabriel Heiler",
     "homepage_url": "https://www.gabrielheiler.com",
@@ -18,20 +18,20 @@
         "persistent": false
     },
     "browser_action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-          "16": "img/mtwd.png",
-          "32": "img/mtwd.png",
-          "48": "img/mtwd.png",
-          "128": "img/mtwd.png"
-      }
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "img/darkify-16.png",
+            "32": "img/darkify-32.png",
+            "48": "img/darkify.png",
+            "128": "img/darkify-128.png"
+        }
     },
     "options_page": "options.html",
     "icons": {
-        "16": "img/mtwd.png",
-        "32": "img/mtwd.png",
-        "48": "img/mtwd.png",
-        "128": "img/mtwd.png"
+        "16": "img/darkify-16.png",
+        "32": "img/darkify-32.png",
+        "48": "img/darkify-48.png",
+        "128": "img/darkify-128.png"
     },
     "web_accessible_resources": [
         "css/basics.css",
