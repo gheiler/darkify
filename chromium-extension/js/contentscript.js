@@ -1,9 +1,9 @@
 // ToDo tasks:
-// . improve performance
+// . furhter improve performance
+// . some glitches on mutations, specially with hovers
 const dontStop = 'dontStop';
 const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
 const defaultBackground = 'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box';
-// const defaultBackgroundColor = '#282A36';
 const defaultBackgroundImage = 'none';
 const darkifyIdCounter = 0;
 var hoverStyles;
@@ -17,33 +17,45 @@ if (pluginEnabled) {
     observeChanges();
 }
 
-function revertStylesheets() {
-    // hoverStyles = document.documentElement.appendChild(document.createElement('style'));
+async function revertStylesheets() {
     // first we reverse all the style sheets, we need to do this given beacuse we cannot account for:
     // - js class additions to elements
     // - elements states :hover, :selected, :etc
     // - media changes
-    // ToDO we need to actually try to get all stylesheets
     let styleSheetsLength = document.styleSheets.length;
-    try {
-        for (let i = 0; i < styleSheetsLength; i++) {
-
-            let styleSheet = document.styleSheets[i];
-            let styleEl = document.createElement('style');
-            document.head.appendChild(styleEl);
-            styleEl.id = 'mtwd-' + i;
-            let styleSheetOverride = styleEl.sheet;
-            for (let j = 0; j < styleSheet.rules.length; j++) {
-                let rule = styleSheet.rules[j];
-                let newRule = getNewRuleFromRuleStyle(rule);
-
-                if (newRule !== '') {
-                    styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
+    for (let i = 0; i < styleSheetsLength; i++) {
+        let styleSheet = document.styleSheets[i];
+        let styleEl = document.createElement('style');
+        document.head.appendChild(styleEl);
+        styleEl.id = 'darkify-ss-' + i;
+        let styleSheetOverride = styleEl.sheet;
+        try {
+            revertStyleSheetRules(styleSheet.rules, styleSheetOverride);
+        } catch(e) {
+            // we do not have direct accesss to some websites style sheets, so we try to fetch them
+            if (styleSheet.href) {
+                const response = await fetch(styleSheet.href);
+                const data = await response.text();
+                if (data && data.trim() !== '') {
+                    const fetchedStyleSheet = document.createElement('style');
+                    fetchedStyleSheet.textContent = data;
+                    fetchedStyleSheet.id = 'darkify-ss-' + i.toString() + i.toString();
+                    document.head.appendChild(fetchedStyleSheet);
+                    styleSheetsLength++;
                 }
             }
         }
-    } catch(e) {
-        // some websites just dont allow access to their style sheets
+    }
+}
+
+function revertStyleSheetRules(rules, styleSheetToOverride) {
+    for (let j = 0; j < rules.length; j++) {
+        let rule = rules[j];
+        let newRule = getNewRuleFromRuleStyle(rule);
+
+        if (newRule !== '') {
+            styleSheetToOverride.insertRule(newRule, styleSheetToOverride.cssRules.length);
+        }
     }
 }
 
@@ -108,14 +120,6 @@ function observeChanges() {
     observer.observe(document.querySelector('html'), config);
 }
 
-function addNoHovertoElementId (elementId) {
-    hoverStyles.textContent += `#${elementId}:not(body):hover {
-        color:inherit!important;
-        background-color:inherit!important;
-        border-color:inherit!important;
-    }`
-};
-
 function reverseStylesForNode(node) {
     let rule = '';
     try {
@@ -131,15 +135,6 @@ function reverseStylesForNode(node) {
             newRule = cssValue + newRule;
         }
         node.setAttribute('style', newRule);
-        
-
-        // ToDo hover should actually be disabled when trying to revert css stylesheets
-        // if (newRule.indexOf('color') || newRule.indexOf('background-color') || newRule.indexOf('border-color')) {
-        //     if (!node.id) {
-        //         node.setAttribute('id', 'darkifyId-' + darkifyIdCounter++);
-        //     }
-        //     addNoHovertoElementId(node.id);
-        // }
     } catch (e) {
         let foo = '';
     }
