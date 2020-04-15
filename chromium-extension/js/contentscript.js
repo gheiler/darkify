@@ -3,132 +3,126 @@
 const dontStop = 'dontStop';
 const defaultEmptyColor = 'rgba(0, 0, 0, 0)';
 const defaultBackground = 'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box';
+// const defaultBackgroundColor = '#282A36';
 const defaultBackgroundImage = 'none';
+const darkifyIdCounter = 0;
+var hoverStyles;
 
-chrome.storage.sync.get(['dontStop', 'excludedDomains', 'excludeOnce', 'timedStart','timeFrom','timeTo'], function(data) {
-    if (!data || typeof data.dontStop === 'undefined') data = { dontStop: true };
-    chrome.storage.sync.set({ excludeOnce: false});
-    let dateFromHour, dateFromMins, dateToHour, dateToMins, nowFromTo, nowHours, now;
-    if (data.timedStart && data.timeFrom && data.timeTo) {
-        dateFromHour = parseInt(data.timeFrom.split(':')[0], 10);
-        dateFromMins = parseInt(data.timeFrom.split(':')[1], 10);
-        dateToHour = parseInt(data.timeTo.split(':')[0], 10);
-        if (dateToHour === 0) {
-            dateToHour = 24;
-        }
-        dateToMins = parseInt(data.timeTo.split(':')[1], 10);
-        now = new Date();
-        nowFromTo = new Date();
-        nowHours = now.getHours();
-    }
+if (pluginEnabled) {
+    revertStylesheets();
+    revertContent();
+    window.addEventListener("load", function load(event) {
+        revertContent();
+    }, false);
+    observeChanges();
+}
 
-    if (!data.excludeOnce && 
-        data.dontStop && 
-        (!data.excludedDomains || !data.excludedDomains.includes(window.location.origin)) &&
-        (!data.timedStart || ( // ToDo fix when dateToHour >= dateFromHour
-                (dateToHour >= dateFromHour ? 
-                    now >= nowFromTo.setHours(dateFromHour, dateFromMins) : 
-                    nowHours <= dateToHour || now >= nowFromTo.setHours(dateFromHour, dateFromMins)
-                ) &&
-                (dateToHour >= dateFromHour ? 
-                    now <= nowFromTo.setHours(dateToHour, dateToMins) : 
-                    nowHours >= dateFromHour || now <= nowFromTo.setHours(dateToHour, dateToMins)
-                )
-            )
-        )) {
-        
-        var loaderStyle = document.documentElement.appendChild(document.createElement('style'));
-        loaderStyle.textContent = 'head {display:block!important;top:0!important;left:0!important;position:fixed!important;width:100%!important;height:100%!important;opacity:0.95!important;z-index:2147483647!important;background:#282A36!important}';
+function revertStylesheets() {
+    // hoverStyles = document.documentElement.appendChild(document.createElement('style'));
+    // first we reverse all the style sheets, we need to do this given beacuse we cannot account for:
+    // - js class additions to elements
+    // - elements states :hover, :selected, :etc
+    // - media changes
+    // ToDO we need to actually try to get all stylesheets
+    let styleSheetsLength = document.styleSheets.length;
+    try {
+        for (let i = 0; i < styleSheetsLength; i++) {
 
-        window.addEventListener("load", function load(event) {
-            let styleSheetsLength = document.styleSheets.length;
-            // first we reverse all the style sheets
-            try {
-                for (let i = 0; i < styleSheetsLength; i++) {
+            let styleSheet = document.styleSheets[i];
+            let styleEl = document.createElement('style');
+            document.head.appendChild(styleEl);
+            styleEl.id = 'mtwd-' + i;
+            let styleSheetOverride = styleEl.sheet;
+            for (let j = 0; j < styleSheet.rules.length; j++) {
+                let rule = styleSheet.rules[j];
+                let newRule = getNewRuleFromRuleStyle(rule);
 
-                    let styleSheet = document.styleSheets[i];
-                    let styleEl = document.createElement('style');
-                    document.head.appendChild(styleEl);
-                    styleEl.id = 'mtwd-' + i;
-                    let styleSheetOverride = styleEl.sheet;
-                    
-                    console.log(styleSheet);
-                    for (let j = 0; j < styleSheet.rules.length; j++) {
-
-                        if (j === 90) {
-                            let foo = '';
-                        }
-                        let rule = styleSheet.rules[j];
-                        let newRule = getNewRuleFromRuleStyle(rule);
-
-                        if (newRule !== '') {
-                            styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
-                        }
-                    }
+                if (newRule !== '') {
+                    styleSheetOverride.insertRule(newRule, styleSheetOverride.cssRules.length);
                 }
-            } catch(e) {
-                // some websites just dont allow access to their style sheets
-                console.log(e);
             }
-
-            // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
-            document.querySelectorAll('body').forEach(function(node) {
-                rule = window.getComputedStyle(node);
-                if ((!rule.backgroundColor || rule.backgroundColor === '' || rule.backgroundColor === defaultEmptyColor || rule.backgroundColor === 'transparent') && 
-                    (!rule.backgroundImage || rule.backgroundImage === '' || rule.backgroundImage === defaultBackgroundImage) && 
-                    (!rule.background || rule.background === '' || rule.background === defaultBackground || rule.background === 'transparent')
-                ) {
-                    node.setAttribute('style', 'background-color: #282A36');
-                }
-            });
-
-            // then we reverse all the computed styles
-            document.querySelectorAll('*').forEach(function(node, index, array) {
-                try {
-                    reverseStylesForNode(node);
-                }
-                catch(ex) {}
-
-                if (index === array.length - 1) {
-                    loaderStyle.remove();
-                }
-            });
-
-            // We also check for changes on the dom
-            var config = { childList: true, subtree: true };
-
-            // Callback function to execute when mutations are observed
-            var callback = function(mutationsList, observer) {
-                setTimeout(function () {
-                    for(var mutation of mutationsList) {
-                        if (mutation.type == 'childList' || mutation.type == 'attributes') {
-                            console.log('A child node has been added or removed.');
-                            if (mutation.target) {
-                                reverseStylesForNode(mutation.target);
-                            }
-                        }
-                        /*else if (mutation.type == 'attributes') {
-                            console.log('The ' + mutation.attributeName + ' attribute was modified.');
-                        }*/
-                    }
-                }, 100);
-            };
-
-            // Create an observer instance linked to the callback function
-            var observer = new MutationObserver(callback);
-
-            // Start observing the target node for configured mutations
-            observer.observe(document.querySelector('body'), config);
-        }, false);
+        }
+    } catch(e) {
+        // some websites just dont allow access to their style sheets
     }
-});
+}
 
+function revertContent() {
+    // first we select the body, TODO: finish this special check for the body, add generic bkg color if none.
+    const body = document.querySelector('body')
+    rule = window.getComputedStyle(body);
+    if ((!rule.backgroundColor || rule.backgroundColor === '' || rule.backgroundColor === defaultEmptyColor || rule.backgroundColor === 'transparent') && 
+        (!rule.backgroundImage || rule.backgroundImage === '' || rule.backgroundImage === defaultBackgroundImage) && 
+        (!rule.background || rule.background === '' || rule.background === defaultBackground || rule.background === 'transparent')
+    ) {
+        body.setAttribute('style', `background-color: ${defaultBackgroundColor}`);
+    }
+
+    // then we reverse all the computed styles
+    document.querySelectorAll('*').forEach(function(node, index, array) {
+        try {
+            reverseStylesForNode(node);
+        }
+        catch(ex) {}
+
+        if (index === array.length - 1) {
+            const loader = document.getElementById('darkify-loader')
+            if (loader) {
+                loader.remove();
+            }
+        }
+    });
+}
+
+function observeChanges() {
+    // We also check for changes on the dom
+    var config = { childList: true, subtree: true };
+
+    // Callback function to execute when mutations are observed
+    var callback = function(mutationsList, observer) {
+        setTimeout(function () {
+            const mutatedNodes = [];
+            mutationsList.forEach(mutation => {
+                if (mutation.addedNodes && (mutation.type == 'childList' || mutation.type == 'attributes')) {
+                    [...mutation.addedNodes].forEach(addedNode => {
+                        let subNodes = [addedNode];
+                        if (addedNode.querySelectorAll) {
+                            subNodes = subNodes.concat(...addedNode.querySelectorAll('*'));
+                        }
+                        subNodes.forEach((subNode) => {
+                            if (!mutatedNodes.includes(subNode)) {
+                                mutatedNodes.push(subNode);
+                            }
+                        })
+                    });
+                }
+            });
+            mutatedNodes.forEach((node) => reverseStylesForNode(node));
+        }, 1);
+    };
+
+    // Create an observer instance linked to the callback function
+    var observer = new MutationObserver(callback);
+
+    // Start observing the target node for configured mutations
+    observer.observe(document.querySelector('html'), config);
+}
+
+function addNoHovertoElementId (elementId) {
+    hoverStyles.textContent += `#${elementId}:not(body):hover {
+        color:inherit!important;
+        background-color:inherit!important;
+        border-color:inherit!important;
+    }`
+};
 
 function reverseStylesForNode(node) {
     let rule = '';
     try {
         rule = window.getComputedStyle(node);
         let newRule = getNewRuleFromRuleStyle({ style: rule }, false);
+
+        // we set the element style
         if (node.style.cssText) {
             let cssValue = node.style.cssText.trim();
             if (!cssValue.indexOf(';', cssValue.length - 1)) {
@@ -137,6 +131,15 @@ function reverseStylesForNode(node) {
             newRule = cssValue + newRule;
         }
         node.setAttribute('style', newRule);
+        
+
+        // ToDo hover should actually be disabled when trying to revert css stylesheets
+        // if (newRule.indexOf('color') || newRule.indexOf('background-color') || newRule.indexOf('border-color')) {
+        //     if (!node.id) {
+        //         node.setAttribute('id', 'darkifyId-' + darkifyIdCounter++);
+        //     }
+        //     addNoHovertoElementId(node.id);
+        // }
     } catch (e) {
         let foo = '';
     }
@@ -281,7 +284,7 @@ function getNewBackgroundColor(unformattedColor, alt) {
     // ToDo improve logic, for now we go with just one background color when not dark enough
     // const brightnessPercentage = colorLuminanceIsBlack(color) ? 70 : 50;
     // const newColor = brightenColor(color, brightnessPercentage);
-    if (colorLuminanceIsWhiteOrAlmost(color)) return '#282A36'
+    if (colorLuminanceIsWhiteOrAlmost(color)) return defaultBackgroundColor;
 
     return shadeBlendConvert(-0.7, color);
 }
@@ -293,22 +296,26 @@ function getRGBA(unformattedColor){
     if (hexaFromName) {
         unformattedColor = hexaFromName;
     }
-    // ToDo add support to hsl() and var() man o meter this is endless...
-    // RGBA
-    if (a=/rgba\(\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(unformattedColor)) 
+    // ToDo add support to var()
+    // with opcity
+    if (a=/rgba\(\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(unformattedColor))
         return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, a: parseFloat(a[4]), value: a[0] };
-    if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor)) 
+    if (a=/hsla\(\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(unformattedColor))
+        return hslToRGB({ h: parseFloat(a[1]) * 2.55, s: parseFloat(a[2]) * 2.55, l: parseFloat(a[3]) * 2.55, a: parseFloat(a[4]), value: a[0] });
+    if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor))
         return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
-    if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor)) 
+    if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor))
         return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), a: Math.round((parseInt(a[4], 16)/255)*100)/100, value: a[0] };
-    // just RGB
-    if (a=/rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor)) 
+    // without opacity
+    if (a=/rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(unformattedColor))
         return { r: parseInt(a[1]), g: parseInt(a[2]), b: parseInt(a[3]), a: null, value: a[0] };
-    if (a=/rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor)) 
+    if (a=/rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(unformattedColor))
         return { r: parseFloat(a[1]) * 2.55, g: parseFloat(a[2]) * 2.55, b: parseFloat(a[3]) * 2.55, a: null, value: a[0] };
-    if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor)) 
+    if (a=/hsl\(\s*([0-9]+(?:\.[0-9]+)?)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*\)/.exec(unformattedColor))
+        return hslToRGB({ h: parseFloat(a[1]) * 2.55, s: parseFloat(a[2]) * 2.55, l: parseFloat(a[3]) * 2.55, a: parseFloat(a[4]), value: a[0] });
+    if (a=/#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(unformattedColor))
         return { r: parseInt(a[1],16), g: parseInt(a[2],16), b: parseInt(a[3],16), a: null, value: a[0] };
-    if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor)) 
+    if (a=/#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(unformattedColor))
         return { r: parseInt(a[1]+a[1], 16), g: parseInt(a[2]+a[2], 16), b: parseInt(a[3]+a[3], 16), a: null, value: a[0] };
 
     return null;
@@ -320,6 +327,29 @@ function getRgbaStringFromColor(color){
     }
     return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
 };
+
+function hslToRGB({h, s, l, a = 1, value }) {
+    if (s === 0) {
+        const [r, b, g] = [l, l, l].map((x) => Math.round(x * 255));
+        return {r, g, b, a};
+    }
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    const [r, g, b] = (h < 60
+        ? [c, x, 0]
+        : h < 120
+        ? [x, c, 0]
+        : h < 180
+        ? [0, c, x]
+        : h < 240
+        ? [0, x, c]
+        : h < 300
+        ? [x, 0, c]
+        : [c, 0, x]
+    ).map((n) => Math.round((n + m) * 255));
+    return {r, g, b, a, value};
+}
 
 function getLuminance(color) {
     return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
@@ -356,7 +386,7 @@ function brightenColor(color, percentage) {
     return brightenedColor;
 }
 
-const shadeBlendConvert = function (p, color, to) {
+const shadeBlendConvert = (p, color, to) => {
     from = getRgbaStringFromColor(color);
     if(typeof(p)!="number"||p<-1||p>1||typeof(from)!="string"||(from[0]!='r'&&from[0]!='#')||(to&&typeof(to)!="string"))return null; //ErrorCheck
     if(!this.sbcRip)this.sbcRip=(d)=>{
@@ -394,7 +424,7 @@ function colourNameToHex(colour)
     "firebrick":"#b22222","floralwhite":"#fffaf0","forestgreen":"#228b22","fuchsia":"#ff00ff",
     "gainsboro":"#dcdcdc","ghostwhite":"#f8f8ff","gold":"#ffd700","goldenrod":"#daa520","gray":"#808080","green":"#008000","greenyellow":"#adff2f",
     "honeydew":"#f0fff0","hotpink":"#ff69b4",
-    "indianred ":"#cd5c5c","indigo":"#4b0082","ivory":"#fffff0","khaki":"#f0e68c",
+    "indianred":"#cd5c5c","indigo":"#4b0082","ivory":"#fffff0","khaki":"#f0e68c",
     "lavender":"#e6e6fa","lavenderblush":"#fff0f5","lawngreen":"#7cfc00","lemonchiffon":"#fffacd","lightblue":"#add8e6","lightcoral":"#f08080","lightcyan":"#e0ffff","lightgoldenrodyellow":"#fafad2",
     "lightgrey":"#d3d3d3","lightgreen":"#90ee90","lightpink":"#ffb6c1","lightsalmon":"#ffa07a","lightseagreen":"#20b2aa","lightskyblue":"#87cefa","lightslategray":"#778899","lightsteelblue":"#b0c4de",
     "lightyellow":"#ffffe0","lime":"#00ff00","limegreen":"#32cd32","linen":"#faf0e6",
